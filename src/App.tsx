@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Box, useInput, useApp } from "ink";
+import { Box, useInput, useApp, useStdout } from "ink";
 import { StatusBar } from "./components/StatusBar.tsx";
 import { ConfirmDialog } from "./components/ConfirmDialog.tsx";
 import { CollectionsScreen } from "./screens/CollectionsScreen.tsx";
@@ -15,6 +15,7 @@ import { executeRequest } from "./utils/curl.ts";
 
 export function App() {
   const { exit } = useApp();
+  const { stdout } = useStdout();
 
   const [screen, setScreen] = useState<Screen>("collections");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -317,7 +318,7 @@ export function App() {
   };
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" height={stdout.rows}>
       <Box flexGrow={1}>
         {screen === "collections" && (
           <CollectionsScreen collections={collections} selectedIndex={selectedIndex} />

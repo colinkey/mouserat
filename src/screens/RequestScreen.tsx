@@ -24,9 +24,9 @@ export function RequestScreen({ request, collection, environment, response, isLo
     : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
 
   return (
-    <Box flexGrow={1}>
-      {/* Left pane: request details */}
-      <Box flexDirection="column" width="50%" padding={1} borderStyle="single" borderRight borderTop={false} borderBottom={false} borderLeft={false}>
+    <Box flexGrow={1} flexDirection="column">
+      {/* Top pane: request details */}
+      <Box flexDirection="column" padding={1} borderStyle="single" borderBottom borderTop={false} borderLeft={false} borderRight={false}>
         <Text bold>{request.name}</Text>
         <Box marginTop={1}>
           <Text color={executionContext?.method ? "yellow" : "magenta"}>{method}</Text>
@@ -72,8 +72,8 @@ export function RequestScreen({ request, collection, environment, response, isLo
         ) : null}
       </Box>
 
-      {/* Right pane: response */}
-      <Box flexDirection="column" width="50%" padding={1}>
+      {/* Bottom pane: response */}
+      <Box flexDirection="column" flexGrow={1} padding={1}>
         {isLoading ? (
           <Text color="yellow">Running...</Text>
         ) : response != null ? (
