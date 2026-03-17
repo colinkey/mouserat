@@ -9,6 +9,11 @@ const BASE_DIR = join(homedir(), ".mouserat");
 const COLLECTIONS_DIR = join(BASE_DIR, "collections");
 const ENVIRONMENTS_DIR = join(BASE_DIR, "environments");
 const LOGS_DIR = join(BASE_DIR, "logs");
+const PREFERENCES_FILE = join(BASE_DIR, "preferences.json");
+
+type Preferences = {
+  activeEnvironmentId?: string | null;
+};
 
 async function ensureDir(path: string) {
   await Bun.file(path).exists(); // probe
@@ -19,6 +24,19 @@ export async function init() {
   await ensureDir(COLLECTIONS_DIR);
   await ensureDir(ENVIRONMENTS_DIR);
   await ensureDir(LOGS_DIR);
+}
+
+export async function getPreferences(): Promise<Preferences> {
+  try {
+    const raw = await Bun.file(PREFERENCES_FILE).text();
+    return JSON.parse(raw) as Preferences;
+  } catch {
+    return {};
+  }
+}
+
+export async function savePreferences(prefs: Preferences): Promise<void> {
+  await Bun.write(PREFERENCES_FILE, JSON.stringify(prefs, null, 2));
 }
 
 export async function appendLog(log: RequestLog): Promise<void> {

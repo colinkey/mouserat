@@ -43,7 +43,9 @@ export function App() {
   }, []);
 
   const loadEnvironments = useCallback(async () => {
-    setEnvironments(await storage.listEnvironments());
+    const envs = await storage.listEnvironments();
+    setEnvironments(envs);
+    setActiveEnvironmentId((current) => (current && envs.some((e) => e.id === current) ? current : null));
   }, []);
 
   const loadRequests = useCallback(async (collectionId: string) => {
@@ -55,11 +57,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    storage.init().then(() => {
+    storage.init().then(async () => {
+      const prefs = await storage.getPreferences();
+      if (prefs.activeEnvironmentId) setActiveEnvironmentId(prefs.activeEnvironmentId);
       loadCollections();
       loadEnvironments();
     });
   }, [loadCollections, loadEnvironments]);
+
+  useEffect(() => {
+    storage.savePreferences({ activeEnvironmentId });
+  }, [activeEnvironmentId]);
 
   const moveUp = () => setSelectedIndex((i) => Math.max(0, i - 1));
   const moveDown = (max: number) => setSelectedIndex((i) => Math.min(max - 1, i + 1));
