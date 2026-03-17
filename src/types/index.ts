@@ -33,7 +33,28 @@ export interface BasicAuth {
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
-export type Screen = "collections" | "collection" | "environments" | "request";
+export interface RequestLog {
+  timestamp: string;
+  durationMs: number;
+  request: {
+    id: string;
+    name: string;
+    method: HttpMethod;
+    url: string;
+    headers: Record<string, string>;
+    body?: unknown;
+    jqFilter?: string;
+  };
+  collection: { id: string; name: string };
+  environment?: { id: string; name: string };
+  response: {
+    stdout: string;
+    stderr: string;
+    exitCode: number;
+  };
+}
+
+export type Screen = "collections" | "collection" | "environments" | "request" | "logs" | "log";
 
 export interface AppState {
   screen: Screen;

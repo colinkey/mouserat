@@ -1,4 +1,5 @@
 import type { Request, Environment, Collection } from "../types/index.ts";
+import { appendLog } from "../storage/index.ts";
 
 export interface ExecuteResult {
   stdout: string;
@@ -45,6 +46,9 @@ export async function executeRequest(
 
   const jqFilter = jqFilterOverride ?? request.jqFilter;
 
+  const timestamp = new Date().toISOString();
+  const startMs = Date.now();
+
   // Run curl
   const curlProc = Bun.spawn(["curl", ...args], { env, stdout: "pipe", stderr: "pipe" });
   const curlStdout = await new Response(curlProc.stdout).text();
@@ -52,7 +56,16 @@ export async function executeRequest(
   const curlExit = await curlProc.exited;
 
   if (curlExit !== 0 || !jqFilter) {
-    return { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit };
+    const result = { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit };
+    appendLog({
+      timestamp,
+      durationMs: Date.now() - startMs,
+      request: { id: request.id, name: request.name, method: request.method, url: fullUrl, headers, body: request.body, jqFilter: jqFilter || undefined },
+      collection: { id: collection.id, name: collection.name },
+      environment: environment ? { id: environment.id, name: environment.name } : undefined,
+      response: result,
+    });
+    return result;
   }
 
   // Pipe through jq
@@ -65,9 +78,18 @@ export async function executeRequest(
   const jqStderr = await new Response(jqProc.stderr).text();
   const jqExit = await jqProc.exited;
 
-  return {
+  const result = {
     stdout: jqStdout,
     stderr: jqStderr || curlStderr,
     exitCode: jqExit,
   };
+  appendLog({
+    timestamp,
+    durationMs: Date.now() - startMs,
+    request: { id: request.id, name: request.name, method: request.method, url: fullUrl, headers, body: request.body, jqFilter },
+    collection: { id: collection.id, name: collection.name },
+    environment: environment ? { id: environment.id, name: environment.name } : undefined,
+    response: result,
+  });
+  return result;
 }

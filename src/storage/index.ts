@@ -1,13 +1,14 @@
 import { join, resolve } from "path";
 import { homedir } from "os";
 import { v4 as uuidv4 } from "uuid";
-import type { Collection, Environment, Request } from "../types/index.ts";
+import type { Collection, Environment, Request, RequestLog } from "../types/index.ts";
 
 const SCHEMAS_DIR = resolve(import.meta.dir, "../../schemas");
 
 const BASE_DIR = join(homedir(), ".mouserat");
 const COLLECTIONS_DIR = join(BASE_DIR, "collections");
 const ENVIRONMENTS_DIR = join(BASE_DIR, "environments");
+const LOGS_DIR = join(BASE_DIR, "logs");
 
 async function ensureDir(path: string) {
   await Bun.file(path).exists(); // probe
@@ -17,6 +18,14 @@ async function ensureDir(path: string) {
 export async function init() {
   await ensureDir(COLLECTIONS_DIR);
   await ensureDir(ENVIRONMENTS_DIR);
+  await ensureDir(LOGS_DIR);
+}
+
+export async function appendLog(log: RequestLog): Promise<void> {
+  await ensureDir(LOGS_DIR);
+  const safeTimestamp = log.timestamp.replace(/:/g, "-");
+  const filePath = join(LOGS_DIR, `${safeTimestamp}-${log.request.id}.json`);
+  await Bun.write(filePath, JSON.stringify(log, null, 2));
 }
 
 // Collections
@@ -153,6 +162,26 @@ export async function getEnvironmentFilePath(environmentId: string): Promise<str
 export async function deleteEnvironment(environmentId: string): Promise<void> {
   const fs = await import("fs/promises");
   await fs.rm(join(ENVIRONMENTS_DIR, `${environmentId}.json`), { force: true });
+}
+
+export async function listLogs(): Promise<RequestLog[]> {
+  const fs = await import("fs/promises");
+  try {
+    const entries = await fs.readdir(LOGS_DIR, { withFileTypes: true });
+    const logs: RequestLog[] = [];
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+      try {
+        const raw = await Bun.file(join(LOGS_DIR, entry.name)).text();
+        logs.push(JSON.parse(raw) as RequestLog);
+      } catch {
+        // skip malformed entries
+      }
+    }
+    return logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  } catch {
+    return [];
+  }
 }
 
 export async function createEnvironment(): Promise<{ id: string; filePath: string }> {

@@ -31,6 +31,7 @@ bun start
 - **Environments** — configure root URLs, basic auth credentials, and environment variables per environment
 - **Request execution** — runs via `curl`, pipes output through `jq`
 - **Split pane** — view request details and response side by side
+- **Request history** — every executed request is logged; browse and inspect past responses with `3`
 - **Editor integration** — press `e` to edit any item in `$EDITOR` or `$VISUAL`
 
 ## Keybinds
@@ -39,6 +40,7 @@ bun start
 |-----|--------|
 | `1` | Collections list |
 | `2` | Environments list |
+| `3` | Request logs |
 | `↑↓` / `jk` | Navigate |
 | `enter` | Open collection / execute request / activate environment |
 | `esc` / `h` | Back |
@@ -62,4 +64,6 @@ All config is stored in `~/.mouserat/`:
         <uuid>.json
   environments/
     <uuid>.json
+  logs/
+    <timestamp>-<uuid>.json
 ```

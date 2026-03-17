@@ -27,6 +27,8 @@ src/
     CollectionScreen.tsx
     EnvironmentsScreen.tsx
     RequestScreen.tsx
+    LogsScreen.tsx          # list of past request logs
+    LogScreen.tsx           # detail view for a single log entry
 ```
 
 ## Data storage (`~/.mouserat/`)
@@ -39,6 +41,8 @@ collections/
       <uuid>.json           # { id, name, method, url, headers?, body?, jqFilter? }
 environments/
   <uuid>.json               # { id, name, rootUrl?, auth?, variables? }
+logs/
+  <timestamp>-<uuid>.json  # RequestLog — written after each executed request
 ```
 
 ## Keybinds
@@ -47,6 +51,7 @@ environments/
 |-----|--------|
 | `1` | Go to collections list |
 | `2` | Go to environments list |
+| `3` | Go to request logs |
 | `↑↓` / `jk` | Navigate lists |
 | `enter` | Open collection / execute request / activate environment |
 | `esc` / `h` | Go back |
@@ -56,6 +61,10 @@ environments/
 | `f` | Set runtime jq filter (request screen) |
 | `r` | Reload from disk |
 | `q` | Quit |
+
+## After each unit of work
+
+After completing any meaningful change, review and update `CLAUDE.md` and `README.md` as needed to reflect new features, screens, keybinds, storage layout, or other relevant changes.
 
 ## Bun conventions
 

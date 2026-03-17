@@ -6,7 +6,9 @@ import { CollectionsScreen } from "./screens/CollectionsScreen.tsx";
 import { CollectionScreen } from "./screens/CollectionScreen.tsx";
 import { EnvironmentsScreen } from "./screens/EnvironmentsScreen.tsx";
 import { RequestScreen } from "./screens/RequestScreen.tsx";
-import type { Collection, Environment, Request, Screen } from "./types/index.ts";
+import { LogsScreen } from "./screens/LogsScreen.tsx";
+import { LogScreen } from "./screens/LogScreen.tsx";
+import type { Collection, Environment, Request, RequestLog, Screen } from "./types/index.ts";
 import * as storage from "./storage/index.ts";
 import { openInEditor } from "./utils/editor.ts";
 import { executeRequest } from "./utils/curl.ts";
@@ -24,6 +26,8 @@ export function App() {
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [activeEnvironmentId, setActiveEnvironmentId] = useState<string | null>(null);
+
+  const [logs, setLogs] = useState<RequestLog[]>([]);
 
   const [response, setResponse] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +48,10 @@ export function App() {
 
   const loadRequests = useCallback(async (collectionId: string) => {
     setRequests(await storage.listRequests(collectionId));
+  }, []);
+
+  const loadLogs = useCallback(async () => {
+    setLogs(await storage.listLogs());
   }, []);
 
   useEffect(() => {
@@ -83,6 +91,12 @@ export function App() {
       setSelectedIndex(0);
       return;
     }
+    if (input === "3") {
+      loadLogs();
+      setScreen("logs");
+      setSelectedIndex(0);
+      return;
+    }
 
     // Vim + arrow navigation
     if (key.upArrow || input === "k") moveUp();
@@ -90,6 +104,7 @@ export function App() {
       if (screen === "collections") moveDown(collections.length);
       if (screen === "environments") moveDown(environments.length);
       if (screen === "collection") moveDown(requests.length);
+      if (screen === "logs") moveDown(logs.length);
     }
 
     // Back
@@ -102,6 +117,8 @@ export function App() {
         setResponse(null);
         setJqFilter("");
         setSelectedIndex(requests.findIndex((r) => r.id === activeRequestId));
+      } else if (screen === "log") {
+        setScreen("logs");
       }
       return;
     }
@@ -126,6 +143,10 @@ export function App() {
         setScreen("request");
         setResponse(null);
         setJqFilter(req.jqFilter ?? "");
+      } else if (screen === "logs") {
+        const log = logs[selectedIndex];
+        if (!log) return;
+        setScreen("log");
       } else if (screen === "request" && activeRequest && activeCollection) {
         setIsLoading(true);
         executeRequest(activeRequest, activeCollection, activeEnvironment, jqFilter || undefined)
@@ -169,6 +190,7 @@ export function App() {
       loadCollections();
       loadEnvironments();
       if (activeCollectionId) loadRequests(activeCollectionId);
+      if (screen === "logs") loadLogs();
       return;
     }
 
@@ -253,11 +275,13 @@ export function App() {
   });
 
   const statusHints = (): string[] => {
-    const base = ["q quit", "1 collections", "2 environments"];
+    const base = ["q quit", "1 collections", "2 environments", "3 logs"];
     if (screen === "collections") return [...base, "↑↓/jk navigate", "enter open", "n new", "e edit", "d delete"];
     if (screen === "environments") return [...base, "↑↓/jk navigate", "enter activate", "n new", "e edit", "d delete"];
     if (screen === "collection") return [...base, "↑↓/jk navigate", "enter open", "esc back", "n new", "e edit", "d delete"];
     if (screen === "request") return ["enter execute", "f jq filter", "e edit collection", "d delete", "esc back", "r reload"];
+    if (screen === "logs") return [...base, "↑↓/jk navigate", "enter view", "r reload"];
+    if (screen === "log") return ["esc back"];
     return base;
   };
 
@@ -288,6 +312,12 @@ export function App() {
             isLoading={isLoading}
             jqFilter={jqFilter}
           />
+        )}
+        {screen === "logs" && (
+          <LogsScreen logs={logs} selectedIndex={selectedIndex} />
+        )}
+        {screen === "log" && logs[selectedIndex] && (
+          <LogScreen log={logs[selectedIndex]} />
         )}
       </Box>
       {confirmDelete ? (
