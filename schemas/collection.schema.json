@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mouserat/schemas/collection",
+  "title": "Collection",
+  "description": "Metadata for a mouserat request collection",
+  "type": "object",
+  "required": ["id", "name"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the collection"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the collection"
+    },
+    "rootUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL prepended to all request URLs in this collection. Overrides the environment root URL."
+    }
+  }
+}

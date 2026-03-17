@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mouserat/schemas/environment",
+  "title": "Environment",
+  "description": "An execution environment providing auth, base URL, and variables for requests",
+  "type": "object",
+  "required": ["id", "name"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the environment"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the environment"
+    },
+    "rootUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL prepended to request URLs when no collection root URL is set"
+    },
+    "auth": {
+      "type": "object",
+      "description": "Authentication configuration",
+      "required": ["type", "email", "password"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "basic",
+          "description": "Authentication type. Currently only 'basic' is supported."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email or username for basic auth"
+        },
+        "password": {
+          "type": "string",
+          "description": "Password for basic auth"
+        }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "description": "Key-value pairs injected as environment variables into the curl execution context",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}
