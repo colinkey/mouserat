@@ -25,6 +25,7 @@ export function LogsScreen({ logs, selectedIndex }: Props) {
       <Text bold>Request History</Text>
       <Box marginTop={1} flexDirection="column">
         {logs.map((log, i) => {
+          if (!log.execution) return null;
           const isSelected = i === selectedIndex;
           const exitOk = log.response.exitCode === 0;
           return (

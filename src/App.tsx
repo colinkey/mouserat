@@ -89,7 +89,7 @@ export function App() {
     }
 
     // Global navigation
-    if (input === "q" && screen !== "request") {
+    if (input === "q") {
       exit();
       return;
     }
@@ -311,7 +311,7 @@ export function App() {
     if (screen === "collections") return [...base, "↑↓/jk navigate", "enter open", "n new", "e edit", "d delete"];
     if (screen === "environments") return [...base, "↑↓/jk navigate", "enter activate", "n new", "e edit", "d delete"];
     if (screen === "collection") return [...base, "↑↓/jk navigate", "enter open", "esc back", "n new", "e edit", "d delete"];
-    if (screen === "request") return ["enter execute", "f execution context", "x clear context", "e edit collection", "d delete", "esc back", "r reload"];
+    if (screen === "request") return ["q quit", "enter execute", "f execution context", "x clear context", "e edit collection", "d delete", "esc back", "r reload"];
     if (screen === "logs") return [...base, "↑↓/jk navigate", "enter view", "r reload"];
     if (screen === "log") return ["esc back"];
     return base;
