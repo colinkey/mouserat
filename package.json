@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "start": "bun run index.tsx",
+    "import-postman": "bun run scripts/import-postman.ts",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
