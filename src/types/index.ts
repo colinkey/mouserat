@@ -33,18 +33,20 @@ export interface BasicAuth {
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
+/** The effective parameters for a single run of a request. Stored in the log. */
+export interface Execution {
+  method: HttpMethod;
+  url: string;
+  headers: Record<string, string>;
+  body?: unknown;
+  jqFilter?: string;
+}
+
 export interface RequestLog {
   timestamp: string;
   durationMs: number;
-  request: {
-    id: string;
-    name: string;
-    method: HttpMethod;
-    url: string;
-    headers: Record<string, string>;
-    body?: unknown;
-    jqFilter?: string;
-  };
+  request: { id: string; name: string };
+  execution: Execution;
   collection: { id: string; name: string };
   environment?: { id: string; name: string };
   response: {

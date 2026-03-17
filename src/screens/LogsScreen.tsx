@@ -32,10 +32,10 @@ export function LogsScreen({ logs, selectedIndex }: Props) {
               <Text color={isSelected ? "cyan" : undefined}>
                 {isSelected ? "> " : "  "}
                 <Text dimColor>{formatTimestamp(log.timestamp)}  </Text>
-                <Text color="magenta">{log.request.method.padEnd(7)}</Text>
+                <Text color="magenta">{log.execution.method.padEnd(7)}</Text>
                 {"  "}
                 {log.request.name}
-                <Text dimColor>  {log.request.url}</Text>
+                <Text dimColor>  {log.execution.url}</Text>
                 {"  "}
                 <Text color={exitOk ? "green" : "red"}>[{log.response.exitCode}]</Text>
                 <Text dimColor>  {log.durationMs}ms</Text>

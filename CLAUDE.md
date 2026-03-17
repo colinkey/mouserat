@@ -42,7 +42,7 @@ collections/
 environments/
   <uuid>.json               # { id, name, rootUrl?, auth?, variables? }
 logs/
-  <timestamp>-<uuid>.json  # RequestLog — written after each executed request
+  <timestamp>-<uuid>.json  # RequestLog — { request: {id,name}, execution: Execution, ... }
 ```
 
 ## Keybinds
@@ -58,7 +58,8 @@ logs/
 | `n` | New item (creates file with defaults, opens in `$EDITOR`) |
 | `e` | Edit in `$EDITOR` / `$VISUAL` |
 | `d` | Delete selected item (prompts y/n confirmation) |
-| `f` | Set runtime jq filter (request screen) |
+| `f` | Configure execution context (method, headers, body, jqFilter) in `$EDITOR` |
+| `x` | Clear execution context (request screen) |
 | `r` | Reload from disk |
 | `q` | Quit |
 

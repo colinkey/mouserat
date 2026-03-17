@@ -11,18 +11,18 @@ function formatTimestamp(iso: string): string {
 }
 
 export function LogScreen({ log }: Props) {
-  const { request, response, collection, environment, timestamp, durationMs } = log;
+  const { request, execution, response, collection, environment, timestamp, durationMs } = log;
 
   return (
     <Box flexGrow={1}>
-      {/* Left pane: request details */}
+      {/* Left pane: execution details */}
       <Box flexDirection="column" width="50%" padding={1} borderStyle="single" borderRight borderTop={false} borderBottom={false} borderLeft={false}>
         <Text bold>{request.name}</Text>
         <Text dimColor>{formatTimestamp(timestamp)}  {durationMs}ms</Text>
 
         <Box marginTop={1}>
-          <Text color="magenta">{request.method}</Text>
-          <Text>{"  "}{request.url}</Text>
+          <Text color="magenta">{execution.method}</Text>
+          <Text>{"  "}{execution.url}</Text>
         </Box>
 
         <Box marginTop={1}>
@@ -37,26 +37,26 @@ export function LogScreen({ log }: Props) {
           </Box>
         ) : null}
 
-        {request.headers && Object.keys(request.headers).length > 0 ? (
+        {execution.headers && Object.keys(execution.headers).length > 0 ? (
           <Box flexDirection="column" marginTop={1}>
             <Text underline>Headers</Text>
-            {Object.entries(request.headers).map(([k, v]) => (
+            {Object.entries(execution.headers).map(([k, v]) => (
               <Text key={k} dimColor>{k}: {v}</Text>
             ))}
           </Box>
         ) : null}
 
-        {request.body != null ? (
+        {execution.body != null ? (
           <Box flexDirection="column" marginTop={1}>
             <Text underline>Body</Text>
-            <Text dimColor>{JSON.stringify(request.body, null, 2)}</Text>
+            <Text dimColor>{JSON.stringify(execution.body, null, 2)}</Text>
           </Box>
         ) : null}
 
-        {request.jqFilter ? (
+        {execution.jqFilter ? (
           <Box marginTop={1}>
             <Text dimColor>jq: </Text>
-            <Text color="yellow">{request.jqFilter}</Text>
+            <Text color="yellow">{execution.jqFilter}</Text>
           </Box>
         ) : null}
       </Box>

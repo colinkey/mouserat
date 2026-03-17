@@ -1,4 +1,4 @@
-import type { Request, Environment, Collection } from "../types/index.ts";
+import type { Request, Environment, Collection, Execution } from "../types/index.ts";
 import { appendLog } from "../storage/index.ts";
 
 export interface ExecuteResult {
@@ -11,65 +11,65 @@ export async function executeRequest(
   request: Request,
   collection: Collection,
   environment: Environment | null,
-  jqFilterOverride?: string,
+  executionContext: Omit<Execution, "url"> | null,
 ): Promise<ExecuteResult> {
-  const rootUrl =
-    collection.rootUrl ?? environment?.rootUrl ?? "";
+  const rootUrl = collection.rootUrl ?? environment?.rootUrl ?? "";
   const fullUrl = `${rootUrl}${request.url}`;
 
-  const args: string[] = ["-s", "-w", "\n", "-X", request.method, fullUrl];
-
-  // Headers
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...request.headers,
+  const execution: Execution = {
+    method: executionContext?.method ?? request.method,
+    url: fullUrl,
+    headers: {
+      "Content-Type": "application/json",
+      ...request.headers,
+      ...executionContext?.headers,
+    },
+    body: executionContext?.body !== undefined ? executionContext.body : request.body,
+    jqFilter: executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter,
   };
-  for (const [key, value] of Object.entries(headers)) {
+
+  const args: string[] = ["-s", "-w", "\n", "-X", execution.method, execution.url];
+
+  for (const [key, value] of Object.entries(execution.headers)) {
     args.push("-H", `${key}: ${value}`);
   }
 
-  // Basic auth
   if (environment?.auth?.type === "basic") {
     args.push("-u", `${environment.auth.email}:${environment.auth.password}`);
   }
 
-  // Body
-  if (request.body != null) {
-    args.push("-d", JSON.stringify(request.body));
+  if (execution.body != null) {
+    args.push("-d", JSON.stringify(execution.body));
   }
 
-  // Env vars for the child process
   const env: Record<string, string> = {
     ...process.env as Record<string, string>,
     ...environment?.variables,
   };
 
-  const jqFilter = jqFilterOverride ?? request.jqFilter;
-
   const timestamp = new Date().toISOString();
   const startMs = Date.now();
 
-  // Run curl
   const curlProc = Bun.spawn(["curl", ...args], { env, stdout: "pipe", stderr: "pipe" });
   const curlStdout = await new Response(curlProc.stdout).text();
   const curlStderr = await new Response(curlProc.stderr).text();
   const curlExit = await curlProc.exited;
 
-  if (curlExit !== 0 || !jqFilter) {
+  const logBase = {
+    timestamp,
+    request: { id: request.id, name: request.name },
+    execution,
+    collection: { id: collection.id, name: collection.name },
+    environment: environment ? { id: environment.id, name: environment.name } : undefined,
+  };
+
+  if (curlExit !== 0 || !execution.jqFilter) {
     const result = { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit };
-    appendLog({
-      timestamp,
-      durationMs: Date.now() - startMs,
-      request: { id: request.id, name: request.name, method: request.method, url: fullUrl, headers, body: request.body, jqFilter: jqFilter || undefined },
-      collection: { id: collection.id, name: collection.name },
-      environment: environment ? { id: environment.id, name: environment.name } : undefined,
-      response: result,
-    });
+    appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
     return result;
   }
 
-  // Pipe through jq
-  const jqProc = Bun.spawn(["jq", jqFilter], {
+  const jqProc = Bun.spawn(["jq", execution.jqFilter], {
     stdin: new TextEncoder().encode(curlStdout),
     stdout: "pipe",
     stderr: "pipe",
@@ -78,18 +78,7 @@ export async function executeRequest(
   const jqStderr = await new Response(jqProc.stderr).text();
   const jqExit = await jqProc.exited;
 
-  const result = {
-    stdout: jqStdout,
-    stderr: jqStderr || curlStderr,
-    exitCode: jqExit,
-  };
-  appendLog({
-    timestamp,
-    durationMs: Date.now() - startMs,
-    request: { id: request.id, name: request.name, method: request.method, url: fullUrl, headers, body: request.body, jqFilter },
-    collection: { id: collection.id, name: collection.name },
-    environment: environment ? { id: environment.id, name: environment.name } : undefined,
-    response: result,
-  });
+  const result = { stdout: jqStdout, stderr: jqStderr || curlStderr, exitCode: jqExit };
+  appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
   return result;
 }

@@ -8,9 +8,9 @@ import { EnvironmentsScreen } from "./screens/EnvironmentsScreen.tsx";
 import { RequestScreen } from "./screens/RequestScreen.tsx";
 import { LogsScreen } from "./screens/LogsScreen.tsx";
 import { LogScreen } from "./screens/LogScreen.tsx";
-import type { Collection, Environment, Request, RequestLog, Screen } from "./types/index.ts";
+import type { Collection, Environment, Execution, Request, RequestLog, Screen } from "./types/index.ts";
 import * as storage from "./storage/index.ts";
-import { openInEditor } from "./utils/editor.ts";
+import { openInEditor, openExecutionInEditor } from "./utils/editor.ts";
 import { executeRequest } from "./utils/curl.ts";
 
 export function App() {
@@ -31,7 +31,7 @@ export function App() {
 
   const [response, setResponse] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [jqFilter, setJqFilter] = useState("");
+  const [executionContext, setExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const activeEnvironment = environments.find((e) => e.id === activeEnvironmentId) ?? null;
@@ -115,7 +115,7 @@ export function App() {
       } else if (screen === "request") {
         setScreen("collection");
         setResponse(null);
-        setJqFilter("");
+        setExecutionContext(null);
         setSelectedIndex(requests.findIndex((r) => r.id === activeRequestId));
       } else if (screen === "log") {
         setScreen("logs");
@@ -142,14 +142,14 @@ export function App() {
         setActiveRequestId(req.id);
         setScreen("request");
         setResponse(null);
-        setJqFilter(req.jqFilter ?? "");
+        setExecutionContext(null);
       } else if (screen === "logs") {
         const log = logs[selectedIndex];
         if (!log) return;
         setScreen("log");
       } else if (screen === "request" && activeRequest && activeCollection) {
         setIsLoading(true);
-        executeRequest(activeRequest, activeCollection, activeEnvironment, jqFilter || undefined)
+        executeRequest(activeRequest, activeCollection, activeEnvironment, executionContext)
           .then((result) => {
             setResponse(result.stdout || result.stderr);
           })
@@ -182,6 +182,20 @@ export function App() {
           loadEnvironments();
         });
       }
+      return;
+    }
+
+    // Configure execution context for this run
+    if (input === "f" && screen === "request" && activeRequest) {
+      openExecutionInEditor(activeRequest, executionContext).then((updated) => {
+        if (updated !== null) setExecutionContext(updated);
+      });
+      return;
+    }
+
+    // Clear execution context
+    if (input === "x" && screen === "request") {
+      setExecutionContext(null);
       return;
     }
 
@@ -279,7 +293,7 @@ export function App() {
     if (screen === "collections") return [...base, "↑↓/jk navigate", "enter open", "n new", "e edit", "d delete"];
     if (screen === "environments") return [...base, "↑↓/jk navigate", "enter activate", "n new", "e edit", "d delete"];
     if (screen === "collection") return [...base, "↑↓/jk navigate", "enter open", "esc back", "n new", "e edit", "d delete"];
-    if (screen === "request") return ["enter execute", "f jq filter", "e edit collection", "d delete", "esc back", "r reload"];
+    if (screen === "request") return ["enter execute", "f execution context", "x clear context", "e edit collection", "d delete", "esc back", "r reload"];
     if (screen === "logs") return [...base, "↑↓/jk navigate", "enter view", "r reload"];
     if (screen === "log") return ["esc back"];
     return base;
@@ -310,7 +324,7 @@ export function App() {
             request={activeRequest}
             response={response}
             isLoading={isLoading}
-            jqFilter={jqFilter}
+            executionContext={executionContext}
           />
         )}
         {screen === "logs" && (

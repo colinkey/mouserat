@@ -1,22 +1,29 @@
 import React from "react";
 import { Box, Text } from "ink";
-import type { Request } from "../types/index.ts";
+import type { Execution, Request } from "../types/index.ts";
 
 interface Props {
   request: Request;
   response: string | null;
   isLoading: boolean;
-  jqFilter: string;
+  executionContext: Omit<Execution, "url"> | null;
 }
 
-export function RequestScreen({ request, response, isLoading, jqFilter }: Props) {
+export function RequestScreen({ request, response, isLoading, executionContext }: Props) {
+  const method = executionContext?.method ?? request.method;
+  const body = executionContext?.body !== undefined ? executionContext.body : request.body;
+  const jqFilter = executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter;
+  const overrideHeaders = executionContext?.headers && Object.keys(executionContext.headers).length > 0
+    ? executionContext.headers
+    : null;
+
   return (
     <Box flexGrow={1}>
       {/* Left pane: request details */}
       <Box flexDirection="column" width="50%" padding={1} borderStyle="single" borderRight borderTop={false} borderBottom={false} borderLeft={false}>
         <Text bold>{request.name}</Text>
         <Box marginTop={1}>
-          <Text color="magenta">{request.method}</Text>
+          <Text color={executionContext?.method ? "yellow" : "magenta"}>{method}</Text>
           <Text>{"  "}{request.url}</Text>
         </Box>
 
@@ -29,10 +36,19 @@ export function RequestScreen({ request, response, isLoading, jqFilter }: Props)
           </Box>
         ) : null}
 
-        {request.body != null ? (
+        {overrideHeaders ? (
           <Box flexDirection="column" marginTop={1}>
-            <Text underline>Body</Text>
-            <Text dimColor>{JSON.stringify(request.body, null, 2)}</Text>
+            <Text underline color="yellow">Execution Headers</Text>
+            {Object.entries(overrideHeaders).map(([k, v]) => (
+              <Text key={k} color="yellow">{k}: {v}</Text>
+            ))}
+          </Box>
+        ) : null}
+
+        {body != null ? (
+          <Box flexDirection="column" marginTop={1}>
+            <Text underline color={executionContext?.body !== undefined ? "yellow" : undefined}>Body</Text>
+            <Text dimColor>{JSON.stringify(body, null, 2)}</Text>
           </Box>
         ) : null}
 
@@ -40,6 +56,12 @@ export function RequestScreen({ request, response, isLoading, jqFilter }: Props)
           <Box marginTop={1}>
             <Text dimColor>jq: </Text>
             <Text color="yellow">{jqFilter}</Text>
+          </Box>
+        ) : null}
+
+        {executionContext !== null ? (
+          <Box marginTop={1}>
+            <Text color="yellow" dimColor>* execution context active</Text>
           </Box>
         ) : null}
       </Box>
