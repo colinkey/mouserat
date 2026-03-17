@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Box, useInput, useApp } from "ink";
 import { StatusBar } from "./components/StatusBar.tsx";
 import { ConfirmDialog } from "./components/ConfirmDialog.tsx";
@@ -33,6 +33,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [executionContext, setExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const initializedRef = useRef(false);
 
   const activeEnvironment = environments.find((e) => e.id === activeEnvironmentId) ?? null;
   const activeCollection = collections.find((c) => c.id === activeCollectionId) ?? null;
@@ -62,10 +63,12 @@ export function App() {
       if (prefs.activeEnvironmentId) setActiveEnvironmentId(prefs.activeEnvironmentId);
       loadCollections();
       loadEnvironments();
+      initializedRef.current = true;
     });
   }, [loadCollections, loadEnvironments]);
 
   useEffect(() => {
+    if (!initializedRef.current) return;
     storage.savePreferences({ activeEnvironmentId });
   }, [activeEnvironmentId]);
 
