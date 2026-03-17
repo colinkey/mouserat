@@ -135,7 +135,7 @@ export async function createRequest(collectionId: string): Promise<{ id: string;
     id,
     name: "New Request",
     method: "GET",
-    url: "/",
+    relativeUrl: "/",
     headers: {},
     body: null,
     jqFilter: "",

@@ -1,21 +1,27 @@
 import React from "react";
 import { Box, Text } from "ink";
-import type { Execution, Request } from "../types/index.ts";
+import type { Collection, Environment, Execution, Request } from "../types/index.ts";
 
 interface Props {
   request: Request;
+  collection: Collection;
+  environment: Environment | null;
   response: string | null;
   isLoading: boolean;
   executionContext: Omit<Execution, "url"> | null;
 }
 
-export function RequestScreen({ request, response, isLoading, executionContext }: Props) {
+export function RequestScreen({ request, collection, environment, response, isLoading, executionContext }: Props) {
   const method = executionContext?.method ?? request.method;
   const body = executionContext?.body !== undefined ? executionContext.body : request.body;
   const jqFilter = executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter;
   const overrideHeaders = executionContext?.headers && Object.keys(executionContext.headers).length > 0
     ? executionContext.headers
     : null;
+
+  const effectiveUrl = request.rootUrl
+    ? `${request.rootUrl}${request.relativeUrl ?? ""}`
+    : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
 
   return (
     <Box flexGrow={1}>
@@ -24,7 +30,7 @@ export function RequestScreen({ request, response, isLoading, executionContext }
         <Text bold>{request.name}</Text>
         <Box marginTop={1}>
           <Text color={executionContext?.method ? "yellow" : "magenta"}>{method}</Text>
-          <Text>{"  "}{request.url}</Text>
+          <Text>{"  "}{effectiveUrl}</Text>
         </Box>
 
         {request.headers && Object.keys(request.headers).length > 0 ? (

@@ -36,14 +36,29 @@ src/
 ```
 collections/
   <uuid>/
-    collection.json         # { id, name, rootUrl? }
+    collection.json         # { id, name, rootUrl?, relativeUrl? }
     requests/
-      <uuid>.json           # { id, name, method, url, headers?, body?, jqFilter? }
+      <uuid>.json           # { id, name, method, rootUrl?, relativeUrl?, headers?, body?, jqFilter? }
 environments/
   <uuid>.json               # { id, name, rootUrl?, auth?, variables? }
 logs/
   <timestamp>-<uuid>.json  # RequestLog — { request: {id,name}, execution: Execution, ... }
 ```
+
+## URL resolution
+
+URLs are composed from three levels of configuration. `rootUrl` at any level overrides all parent `rootUrl` values. `relativeUrl` appends to the nearest `rootUrl` from its parent chain.
+
+| Level | `rootUrl` | `relativeUrl` |
+|-------|-----------|---------------|
+| Environment | Base server URL | — |
+| Collection | Overrides environment's `rootUrl` | Appended after the effective root URL |
+| Request | Overrides collection + environment `rootUrl`; only request's `relativeUrl` is appended | Appended after the effective root URL |
+
+**Examples:**
+- `env.rootUrl=https://api.example.com`, `collection.relativeUrl=/v2`, `request.relativeUrl=/users` → `https://api.example.com/v2/users`
+- `collection.rootUrl=https://staging.example.com`, `collection.relativeUrl=/v1`, `request.relativeUrl=/orders` → `https://staging.example.com/v1/orders`
+- `request.rootUrl=https://other.example.com`, `request.relativeUrl=/ping` → `https://other.example.com/ping` (ignores collection/env)
 
 ## Keybinds
 

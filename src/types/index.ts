@@ -3,6 +3,7 @@ export interface Collection {
   id: string;
   name: string;
   rootUrl?: string;
+  relativeUrl?: string;
 }
 
 export interface Request {
@@ -10,7 +11,8 @@ export interface Request {
   id: string;
   name: string;
   method: HttpMethod;
-  url: string;
+  rootUrl?: string;
+  relativeUrl?: string;
   headers?: Record<string, string>;
   body?: unknown;
   jqFilter?: string;

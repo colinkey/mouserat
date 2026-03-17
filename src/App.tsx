@@ -333,9 +333,11 @@ export function App() {
             selectedIndex={selectedIndex}
           />
         )}
-        {screen === "request" && activeRequest && (
+        {screen === "request" && activeRequest && activeCollection && (
           <RequestScreen
             request={activeRequest}
+            collection={activeCollection}
+            environment={activeEnvironment}
             response={response}
             isLoading={isLoading}
             executionContext={executionContext}

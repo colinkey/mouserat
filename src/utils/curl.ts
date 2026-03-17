@@ -13,8 +13,9 @@ export async function executeRequest(
   environment: Environment | null,
   executionContext: Omit<Execution, "url"> | null,
 ): Promise<ExecuteResult> {
-  const rootUrl = collection.rootUrl ?? environment?.rootUrl ?? "";
-  const fullUrl = `${rootUrl}${request.url}`;
+  const fullUrl = request.rootUrl
+    ? `${request.rootUrl}${request.relativeUrl ?? ""}`
+    : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
 
   const execution: Execution = {
     method: executionContext?.method ?? request.method,

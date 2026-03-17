@@ -23,7 +23,11 @@
     "rootUrl": {
       "type": "string",
       "format": "uri",
-      "description": "Base URL prepended to all request URLs in this collection. Overrides the environment root URL."
+      "description": "Base URL for all requests in this collection. Overrides the environment root URL."
+    },
+    "relativeUrl": {
+      "type": "string",
+      "description": "Path prefix appended to the nearest root URL (environment's) and prepended to all request relative URLs."
     }
   }
 }

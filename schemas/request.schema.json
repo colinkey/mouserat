@@ -4,7 +4,7 @@
   "title": "Request",
   "description": "An individual HTTP request within a collection",
   "type": "object",
-  "required": ["id", "name", "method", "url"],
+  "required": ["id", "name", "method"],
   "additionalProperties": false,
   "properties": {
     "$schema": {
@@ -25,9 +25,14 @@
       "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
       "description": "HTTP method"
     },
-    "url": {
+    "rootUrl": {
       "type": "string",
-      "description": "URL path appended to the collection or environment root URL"
+      "format": "uri",
+      "description": "Overrides the collection and environment root URL for this request only."
+    },
+    "relativeUrl": {
+      "type": "string",
+      "description": "Path appended to the nearest root URL (collection's or environment's), unless rootUrl is set."
     },
     "headers": {
       "type": "object",
