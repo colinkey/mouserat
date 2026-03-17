@@ -168,7 +168,13 @@ export function App() {
 
     // Edit
     if (input === "e") {
-      if (screen === "collection" || screen === "request") {
+      if (screen === "request") {
+        if (!activeCollectionId || !activeRequest) return;
+        storage.getRequestFilePath(activeCollectionId, activeRequest.id).then((path) => {
+          openInEditor(path);
+          loadRequests(activeCollectionId);
+        });
+      } else if (screen === "collection") {
         if (!activeCollectionId) return;
         storage.getCollectionFilePath(activeCollectionId).then((path) => {
           openInEditor(path);
