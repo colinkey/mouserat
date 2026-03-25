@@ -90,7 +90,7 @@ export function App() {
 
     // Global navigation
     if (input === "q") {
-      exit();
+      setConfirmDelete({ message: "Quit mouserat?", onConfirm: exit });
       return;
     }
     if (input === "1") {
