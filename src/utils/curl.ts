@@ -8,6 +8,22 @@ export interface ExecuteResult {
   rawStdout: string;
 }
 
+/** Returns the variable names referenced in a URL pattern using :varName syntax. */
+export function extractUrlVariables(url: string): string[] {
+  return [...url.matchAll(/:([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]).filter((v): v is string => v !== undefined);
+}
+
+/** Interpolates :varName tokens in a URL. Returns the resolved URL and any missing variable names. */
+function interpolateUrl(url: string, variables: Record<string, string>): { url: string; missing: string[] } {
+  const missing: string[] = [];
+  const result = url.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (match, name: string) => {
+    if (name in variables) return variables[name] ?? match;
+    missing.push(name);
+    return match;
+  });
+  return { url: result, missing };
+}
+
 export async function executeRequest(
   request: Request,
   collection: Collection,
@@ -18,9 +34,25 @@ export async function executeRequest(
     ? `${request.rootUrl}${request.relativeUrl ?? ""}`
     : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
 
+  const allVariables: Record<string, string> = {
+    ...environment?.variables,
+    ...executionContext?.variables,
+  };
+
+  const { url: interpolatedUrl, missing } = interpolateUrl(fullUrl, allVariables);
+
+  if (missing.length > 0) {
+    return {
+      stdout: "",
+      stderr: `Missing URL variables: ${missing.join(", ")}`,
+      exitCode: 1,
+      rawStdout: "",
+    };
+  }
+
   const execution: Execution = {
     method: executionContext?.method ?? request.method,
-    url: fullUrl,
+    url: interpolatedUrl,
     headers: {
       "Content-Type": "application/json",
       ...request.headers,
@@ -28,6 +60,7 @@ export async function executeRequest(
     },
     body: executionContext?.body !== undefined ? executionContext.body : request.body,
     jqFilter: executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter,
+    variables: Object.keys(allVariables).length > 0 ? allVariables : undefined,
   };
 
   const args: string[] = ["-s", "-w", "\n", "-X", execution.method, execution.url];

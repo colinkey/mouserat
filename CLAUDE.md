@@ -43,6 +43,8 @@ environments/
   <uuid>.json               # { id, name, rootUrl?, auth?, variables? }
 logs/
   <timestamp>-<uuid>.json  # RequestLog — { request: {id,name}, execution: Execution, ... }
+last-execution/
+  <request-uuid>.json      # last Execution context used for a request (persists across sessions)
 ```
 
 ## URL resolution
@@ -60,6 +62,12 @@ URLs are composed from three levels of configuration. `rootUrl` at any level ove
 - `collection.rootUrl=https://staging.example.com`, `collection.relativeUrl=/v1`, `request.relativeUrl=/orders` → `https://staging.example.com/v1/orders`
 - `request.rootUrl=https://other.example.com`, `request.relativeUrl=/ping` → `https://other.example.com/ping` (ignores collection/env)
 
+## URL variables
+
+Request URLs support `:varName` path variables (e.g. `/api/users/:id`). Variable values are supplied via the execution context (`v` key) and interpolated at execution time. Environment `variables` serve as lower-priority defaults; execution context `variables` override them.
+
+If a referenced variable is missing when executing, an error is shown in the response pane and no request is sent.
+
 ## Keybinds
 
 | Key | Action |
@@ -72,10 +80,12 @@ URLs are composed from three levels of configuration. `rootUrl` at any level ove
 | `esc` / `h` | Go back |
 | `n` | New item (creates file with defaults, opens in `$EDITOR`) |
 | `e` | Edit in `$EDITOR` / `$VISUAL` |
+| `v` | Edit execution context (method, headers, body, variables) in `$EDITOR` (request screen) |
+| `l` | Load last used execution context (request screen) |
 | `d` | Delete selected item (prompts y/n confirmation) |
 | `f` | Apply jq filter to response body (opens filter expression in `$EDITOR`) |
 | `c` | Copy current jq filter to the request definition |
-| `x` | Clear execution context (request screen) |
+| `x` | Clear jq filter or execution context (request screen) |
 | `r` | Reload from disk |
 | `q` | Quit |
 

@@ -1,5 +1,6 @@
 import { spawnSync } from "child_process";
 import type { Execution, Request } from "../types/index.ts";
+import { extractUrlVariables } from "./curl.ts";
 
 export function openInEditor(filePath: string) {
   const editor = process.env["VISUAL"] ?? process.env["EDITOR"] ?? "vi";
@@ -14,12 +15,21 @@ export function openInEditor(filePath: string) {
 export async function openExecutionInEditor(
   request: Request,
   current: Omit<Execution, "url"> | null,
+  effectiveUrl?: string,
 ): Promise<Omit<Execution, "url"> | null> {
+  const urlVariableNames = effectiveUrl ? extractUrlVariables(effectiveUrl) : [];
+  const existingVariables = current?.variables ?? {};
+  const scaffoldedVariables =
+    urlVariableNames.length > 0
+      ? Object.fromEntries(urlVariableNames.map((name) => [name, existingVariables[name] ?? ""]))
+      : undefined;
+
   const defaults: Omit<Execution, "url"> = {
     method: request.method,
     headers: request.headers ?? {},
     body: request.body,
     jqFilter: request.jqFilter,
+    ...(scaffoldedVariables !== undefined ? { variables: scaffoldedVariables } : {}),
   };
   const tmpPath = `${process.env["TMPDIR"] ?? "/tmp"}/mouserat-execution.json`;
   await Bun.write(tmpPath, JSON.stringify(current ?? defaults, null, 2));

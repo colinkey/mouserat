@@ -35,6 +35,7 @@ export function App() {
   const [responseJqFilter, setResponseJqFilter] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [executionContext, setExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
+  const [lastExecutionContext, setLastExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const initializedRef = useRef(false);
 
@@ -132,6 +133,7 @@ export function App() {
         setRawResponse(null);
         setResponseJqFilter(null);
         setExecutionContext(null);
+        setLastExecutionContext(null);
         setSelectedIndex(requests.findIndex((r) => r.id === activeRequestId));
       } else if (screen === "log") {
         setScreen("logs");
@@ -161,6 +163,7 @@ export function App() {
         setRawResponse(null);
         setResponseJqFilter(null);
         setExecutionContext(null);
+        storage.getLastExecution(req.id).then(setLastExecutionContext);
       } else if (screen === "logs") {
         const log = logs[selectedIndex];
         if (!log) return;
@@ -173,13 +176,17 @@ export function App() {
             const output = result.stdout || result.stderr;
             setRawResponse(result.rawStdout);
             setResponse(output);
+            if (executionContext) {
+              storage.saveLastExecution(activeRequest.id, executionContext);
+              setLastExecutionContext(executionContext);
+            }
           })
           .finally(() => setIsLoading(false));
       }
       return;
     }
 
-    // Edit
+    // Edit / execution context
     if (input === "e") {
       if (screen === "request") {
         if (!activeCollectionId || !activeRequest) return;
@@ -209,6 +216,23 @@ export function App() {
           loadEnvironments();
         });
       }
+      return;
+    }
+
+    // Edit execution context (variables, method, headers, body overrides)
+    if (input === "v" && screen === "request" && activeRequest) {
+      const effectiveUrl = activeRequest.rootUrl
+        ? `${activeRequest.rootUrl}${activeRequest.relativeUrl ?? ""}`
+        : `${activeCollection?.rootUrl ?? activeEnvironment?.rootUrl ?? ""}${activeCollection?.relativeUrl ?? ""}${activeRequest.relativeUrl ?? ""}`;
+      openExecutionInEditor(activeRequest, executionContext, effectiveUrl).then((ctx) => {
+        if (ctx) setExecutionContext(ctx);
+      });
+      return;
+    }
+
+    // Load last execution context
+    if (input === "l" && screen === "request" && lastExecutionContext) {
+      setExecutionContext(lastExecutionContext);
       return;
     }
 
@@ -336,7 +360,7 @@ export function App() {
     if (screen === "collections") return [...base, "↑↓/jk navigate", "enter open", "n new", "e edit", "d delete"];
     if (screen === "environments") return [...base, "↑↓/jk navigate", "enter activate", "n new", "e edit", "d delete"];
     if (screen === "collection") return [...base, "↑↓/jk navigate", "enter open", "esc back", "n new", "e edit", "d delete"];
-    if (screen === "request") return ["q quit", "enter execute", "f jq filter", "x clear filter", "c copy filter to request", "e edit request", "d delete", "esc back", "r reload"];
+    if (screen === "request") return ["q quit", "enter execute", "v execution context", "l load last", "f jq filter", "x clear", "c copy filter", "e edit request", "d delete", "esc back"];
     if (screen === "logs") return [...base, "↑↓/jk navigate", "enter view", "r reload"];
     if (screen === "log") return ["esc back"];
     return base;
@@ -370,6 +394,7 @@ export function App() {
             response={response}
             isLoading={isLoading}
             executionContext={executionContext}
+            lastExecutionContext={lastExecutionContext}
             responseJqFilter={responseJqFilter}
           />
         )}

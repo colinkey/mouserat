@@ -29,6 +29,8 @@ bun start
 - **Collections** — group related requests together, with an optional root URL
 - **Requests** — define HTTP requests (any verb) with headers, body, and a default `jq` filter
 - **Environments** — configure root URLs, basic auth credentials, and environment variables per environment
+- **URL variables** — use `:varName` syntax in URLs (e.g. `/api/users/:id`); supply values via execution context
+- **Execution context** — per-run overrides for method, headers, body, and URL variables; last used context is remembered across sessions
 - **Request execution** — runs via `curl`, pipes output through `jq`
 - **Split pane** — view request details and response side by side
 - **Request history** — every executed request is logged; browse and inspect past responses with `3`
@@ -46,6 +48,8 @@ bun start
 | `esc` / `h` | Back |
 | `n` | New item |
 | `e` | Edit in `$EDITOR` |
+| `v` | Edit execution context — method, headers, body, URL variables (request screen) |
+| `l` | Load last used execution context (request screen) |
 | `d` | Delete (y/n confirmation) |
 | `f` | Set runtime jq filter (request screen) |
 | `r` | Reload from disk |
@@ -66,4 +70,6 @@ All config is stored in `~/.mouserat/`:
     <uuid>.json
   logs/
     <timestamp>-<uuid>.json
+  last-execution/
+    <request-uuid>.json
 ```

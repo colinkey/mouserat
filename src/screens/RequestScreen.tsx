@@ -9,10 +9,11 @@ interface Props {
   response: string | null;
   isLoading: boolean;
   executionContext: Omit<Execution, "url"> | null;
+  lastExecutionContext: Omit<Execution, "url"> | null;
   responseJqFilter: string | null;
 }
 
-export function RequestScreen({ request, collection, environment, response, isLoading, executionContext, responseJqFilter }: Props) {
+export function RequestScreen({ request, collection, environment, response, isLoading, executionContext, lastExecutionContext, responseJqFilter }: Props) {
   const method = executionContext?.method ?? request.method;
   const body = executionContext?.body !== undefined ? executionContext.body : request.body;
   const jqFilter = executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter;
@@ -23,6 +24,14 @@ export function RequestScreen({ request, collection, environment, response, isLo
   const effectiveUrl = request.rootUrl
     ? `${request.rootUrl}${request.relativeUrl ?? ""}`
     : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
+
+  const activeVariables = executionContext?.variables && Object.keys(executionContext.variables).length > 0
+    ? executionContext.variables
+    : null;
+
+  const lastVariables = lastExecutionContext?.variables && Object.keys(lastExecutionContext.variables).length > 0
+    ? lastExecutionContext.variables
+    : null;
 
   return (
     <Box flexGrow={1} flexDirection="column">
@@ -66,9 +75,28 @@ export function RequestScreen({ request, collection, environment, response, isLo
           </Box>
         ) : null}
 
+        {activeVariables ? (
+          <Box flexDirection="column" marginTop={1}>
+            <Text underline color="yellow">Variables</Text>
+            {Object.entries(activeVariables).map(([k, v]) => (
+              <Text key={k} color="yellow">{k}: {v}</Text>
+            ))}
+          </Box>
+        ) : null}
+
         {executionContext !== null ? (
           <Box marginTop={1}>
             <Text color="yellow" dimColor>* execution context active</Text>
+          </Box>
+        ) : lastExecutionContext !== null ? (
+          <Box marginTop={1}>
+            <Text dimColor>last: </Text>
+            {lastVariables
+              ? Object.entries(lastVariables).map(([k, v]) => (
+                  <Text key={k} dimColor>{k}={v}  </Text>
+                ))
+              : null}
+            <Text dimColor>(l to apply)</Text>
           </Box>
         ) : null}
       </Box>
