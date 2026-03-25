@@ -63,7 +63,7 @@ export async function listCollections(): Promise<Collection[]> {
         // skip malformed entries
       }
     }
-    return collections;
+    return collections.sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [];
   }
@@ -118,7 +118,7 @@ export async function listRequests(collectionId: string): Promise<Request[]> {
         // skip malformed entries
       }
     }
-    return requests;
+    return requests.sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [];
   }
@@ -167,7 +167,7 @@ export async function listEnvironments(): Promise<Environment[]> {
         // skip malformed entries
       }
     }
-    return environments;
+    return environments.sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [];
   }
