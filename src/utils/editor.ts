@@ -30,3 +30,19 @@ export async function openExecutionInEditor(
     return null;
   }
 }
+
+/**
+ * Opens a temp file in $EDITOR pre-populated with a jq filter expression.
+ * Returns the trimmed filter string, or null if the file was empty or couldn't be read.
+ */
+export async function openJqFilterInEditor(currentFilter: string): Promise<string | null> {
+  const tmpPath = `${process.env["TMPDIR"] ?? "/tmp"}/mouserat-jq-filter.jq`;
+  await Bun.write(tmpPath, currentFilter);
+  openInEditor(tmpPath);
+  try {
+    const result = (await Bun.file(tmpPath).text()).trim();
+    return result || null;
+  } catch {
+    return null;
+  }
+}

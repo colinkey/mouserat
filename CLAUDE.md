@@ -73,7 +73,8 @@ URLs are composed from three levels of configuration. `rootUrl` at any level ove
 | `n` | New item (creates file with defaults, opens in `$EDITOR`) |
 | `e` | Edit in `$EDITOR` / `$VISUAL` |
 | `d` | Delete selected item (prompts y/n confirmation) |
-| `f` | Configure execution context (method, headers, body, jqFilter) in `$EDITOR` |
+| `f` | Apply jq filter to response body (opens filter expression in `$EDITOR`) |
+| `c` | Copy current jq filter to the request definition |
 | `x` | Clear execution context (request screen) |
 | `r` | Reload from disk |
 | `q` | Quit |

@@ -146,6 +146,14 @@ export async function createRequest(collectionId: string): Promise<{ id: string;
   return { id, filePath };
 }
 
+export async function saveRequestJqFilter(collectionId: string, requestId: string, jqFilter: string): Promise<void> {
+  const filePath = join(COLLECTIONS_DIR, collectionId, "requests", `${requestId}.json`);
+  const raw = await Bun.file(filePath).text();
+  const request = JSON.parse(raw) as Record<string, unknown>;
+  request.jqFilter = jqFilter;
+  await Bun.write(filePath, JSON.stringify(request, null, 2));
+}
+
 export async function deleteRequest(collectionId: string, requestId: string): Promise<void> {
   const fs = await import("fs/promises");
   await fs.rm(join(COLLECTIONS_DIR, collectionId, "requests", `${requestId}.json`), { force: true });

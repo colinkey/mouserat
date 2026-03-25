@@ -5,6 +5,7 @@ export interface ExecuteResult {
   stdout: string;
   stderr: string;
   exitCode: number;
+  rawStdout: string;
 }
 
 export async function executeRequest(
@@ -65,7 +66,7 @@ export async function executeRequest(
   };
 
   if (curlExit !== 0 || !execution.jqFilter) {
-    const result = { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit };
+    const result = { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit, rawStdout: curlStdout };
     appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
     return result;
   }
@@ -79,7 +80,22 @@ export async function executeRequest(
   const jqStderr = await new Response(jqProc.stderr).text();
   const jqExit = await jqProc.exited;
 
-  const result = { stdout: jqStdout, stderr: jqStderr || curlStderr, exitCode: jqExit };
+  const result = { stdout: jqStdout, stderr: jqStderr || curlStderr, exitCode: jqExit, rawStdout: curlStdout };
   appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
   return result;
+}
+
+/**
+ * Applies a jq filter to the given input string. Returns the filtered output.
+ */
+export async function applyJqFilter(input: string, filter: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  const jqProc = Bun.spawn(["jq", filter], {
+    stdin: new TextEncoder().encode(input),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const stdout = await new Response(jqProc.stdout).text();
+  const stderr = await new Response(jqProc.stderr).text();
+  const exitCode = await jqProc.exited;
+  return { stdout, stderr, exitCode };
 }
