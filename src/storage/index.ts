@@ -1,7 +1,7 @@
 import { join, resolve } from "path";
 import { homedir } from "os";
 import { v4 as uuidv4 } from "uuid";
-import type { Collection, Environment, Request, RequestLog } from "../types/index.ts";
+import type { Collection, Environment, Execution, Request, RequestLog } from "../types/index.ts";
 
 const SCHEMAS_DIR = resolve(import.meta.dir, "../../schemas");
 
@@ -9,6 +9,7 @@ const BASE_DIR = join(homedir(), ".mouserat");
 const COLLECTIONS_DIR = join(BASE_DIR, "collections");
 const ENVIRONMENTS_DIR = join(BASE_DIR, "environments");
 const LOGS_DIR = join(BASE_DIR, "logs");
+const LAST_EXECUTION_DIR = join(BASE_DIR, "last-execution");
 const PREFERENCES_FILE = join(BASE_DIR, "preferences.json");
 
 type Preferences = {
@@ -24,6 +25,7 @@ export async function init() {
   await ensureDir(COLLECTIONS_DIR);
   await ensureDir(ENVIRONMENTS_DIR);
   await ensureDir(LOGS_DIR);
+  await ensureDir(LAST_EXECUTION_DIR);
 }
 
 export async function getPreferences(): Promise<Preferences> {
@@ -208,6 +210,22 @@ export async function listLogs(): Promise<RequestLog[]> {
   } catch {
     return [];
   }
+}
+
+// Last execution context
+
+export async function getLastExecution(requestId: string): Promise<Omit<Execution, "url"> | null> {
+  try {
+    const raw = await Bun.file(join(LAST_EXECUTION_DIR, `${requestId}.json`)).text();
+    return JSON.parse(raw) as Omit<Execution, "url">;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveLastExecution(requestId: string, context: Omit<Execution, "url">): Promise<void> {
+  await ensureDir(LAST_EXECUTION_DIR);
+  await Bun.write(join(LAST_EXECUTION_DIR, `${requestId}.json`), JSON.stringify(context, null, 2));
 }
 
 export async function createEnvironment(): Promise<{ id: string; filePath: string }> {

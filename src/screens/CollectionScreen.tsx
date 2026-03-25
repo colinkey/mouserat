@@ -26,7 +26,7 @@ export function CollectionScreen({ collection, requests, selectedIndex }: Props)
                   <Text color="magenta">{req.method.padEnd(7)}</Text>
                   {"  "}
                   {req.name}
-                  <Text dimColor>  {req.url}</Text>
+                  <Text dimColor>  {req.relativeUrl}</Text>
                 </Text>
               </Box>
             );

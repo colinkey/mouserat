@@ -42,6 +42,7 @@ export interface Execution {
   headers: Record<string, string>;
   body?: unknown;
   jqFilter?: string;
+  variables?: Record<string, string>;
 }
 
 export interface RequestLog {
