@@ -168,6 +168,39 @@ describe("parsePostmanUrl", () => {
   test("returns empty object for empty object url with no raw", () => {
     expect(parsePostmanUrl({})).toEqual({});
   });
+
+  test("host without protocol becomes bare rootUrl", () => {
+    const result = parsePostmanUrl({ host: "api.example.com", path: ["v1"] });
+    expect(result.rootUrl).toBe("api.example.com");
+    expect(result.relativeUrl).toBe("/v1");
+  });
+
+  test("path segments as objects use their value field", () => {
+    const result = parsePostmanUrl({
+      protocol: "https",
+      host: "api.example.com",
+      path: [{ type: "path", value: "users" }, { type: "path", value: ":id" }],
+    });
+    expect(result.relativeUrl).toBe("/users/:id");
+  });
+
+  test("path as a plain string is treated as relative path", () => {
+    const result = parsePostmanUrl({
+      protocol: "https",
+      host: "api.example.com",
+      path: "v1/users",
+    });
+    expect(result.relativeUrl).toBe("/v1/users");
+  });
+
+  test("path as a plain string already starting with slash is kept as-is", () => {
+    const result = parsePostmanUrl({
+      protocol: "https",
+      host: "api.example.com",
+      path: "/v1/users",
+    });
+    expect(result.relativeUrl).toBe("/v1/users");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -291,6 +324,23 @@ describe("parseBody", () => {
   test("returns undefined for disabled body", () => {
     const warnings: Warning[] = [];
     expect(parseBody({ mode: "raw", raw: "hello", disabled: true }, "col", "req", warnings)).toBeUndefined();
+  });
+
+  test("returns undefined for unknown body mode", () => {
+    const warnings: Warning[] = [];
+    // @ts-expect-error intentional unknown mode
+    expect(parseBody({ mode: "unknown" }, "col", "req", warnings)).toBeUndefined();
+    expect(warnings).toHaveLength(0);
+  });
+
+  test("returns undefined for raw body with no raw field", () => {
+    const warnings: Warning[] = [];
+    expect(parseBody({ mode: "raw" }, "col", "req", warnings)).toBeUndefined();
+  });
+
+  test("returns undefined for urlencoded body with no entries", () => {
+    const warnings: Warning[] = [];
+    expect(parseBody({ mode: "urlencoded", urlencoded: [] }, "col", "req", warnings)).toBeUndefined();
   });
 });
 

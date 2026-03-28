@@ -93,6 +93,14 @@ If a referenced variable is missing when executing, an error is shown in the res
 
 After completing any meaningful change, review and update `CLAUDE.md` and `README.md` as needed to reflect new features, screens, keybinds, storage layout, or other relevant changes.
 
+## Testing
+
+- Tests live alongside source files as `*.test.ts`
+- Run with `bun test`; check coverage with `bun run test:coverage`
+- **Strive for 100% test coverage.** Every new function or module should have corresponding tests before the work is considered complete.
+- Storage tests inject `process.env.MOUSERAT_BASE_DIR` to redirect I/O to a temp directory — never write tests that touch `~/.mouserat`.
+- CI runs typecheck + tests on every push and pull request (`.github/workflows/ci.yml`).
+
 ## Bun conventions
 
 - Use `bun <file>` instead of `node` or `ts-node`

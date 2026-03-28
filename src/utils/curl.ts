@@ -14,7 +14,7 @@ export function extractUrlVariables(url: string): string[] {
 }
 
 /** Interpolates :varName tokens in a URL. Returns the resolved URL and any missing variable names. */
-function interpolateUrl(url: string, variables: Record<string, string>): { url: string; missing: string[] } {
+export function interpolateUrl(url: string, variables: Record<string, string>): { url: string; missing: string[] } {
   const missing: string[] = [];
   const result = url.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (match, name: string) => {
     if (name in variables) return variables[name] ?? match;
@@ -24,15 +24,20 @@ function interpolateUrl(url: string, variables: Record<string, string>): { url: 
   return { url: result, missing };
 }
 
+/** Resolves the full URL from request, collection, and environment rootUrl/relativeUrl configuration. */
+export function buildUrl(request: Request, collection: Collection, environment: Environment | null): string {
+  return request.rootUrl
+    ? `${request.rootUrl}${request.relativeUrl ?? ""}`
+    : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
+}
+
 export async function executeRequest(
   request: Request,
   collection: Collection,
   environment: Environment | null,
   executionContext: Omit<Execution, "url"> | null,
 ): Promise<ExecuteResult> {
-  const fullUrl = request.rootUrl
-    ? `${request.rootUrl}${request.relativeUrl ?? ""}`
-    : `${collection.rootUrl ?? environment?.rootUrl ?? ""}${collection.relativeUrl ?? ""}${request.relativeUrl ?? ""}`;
+  const fullUrl = buildUrl(request, collection, environment);
 
   const allVariables: Record<string, string> = {
     ...environment?.variables,
