@@ -55,6 +55,16 @@ bun start
 | `r` | Reload from disk |
 | `q` | Quit |
 
+## Development
+
+```sh
+bun test                  # run tests
+bun run test:coverage     # run tests with coverage report
+bun run typecheck         # TypeScript type checking
+```
+
+CI runs typecheck and the full test suite on every push and pull request.
+
 ## Data storage
 
 All config is stored in `~/.mouserat/`:

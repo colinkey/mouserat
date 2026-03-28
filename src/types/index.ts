@@ -35,6 +35,16 @@ export interface BasicAuth {
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
+export const HttpMethods = {
+  GET: "GET",
+  POST: "POST",
+  PUT: "PUT",
+  PATCH: "PATCH",
+  DELETE: "DELETE",
+  HEAD: "HEAD",
+  OPTIONS: "OPTIONS",
+} as const satisfies Record<HttpMethod, HttpMethod>;
+
 /** The effective parameters for a single run of a request. Stored in the log. */
 export interface Execution {
   method: HttpMethod;

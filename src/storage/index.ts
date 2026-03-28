@@ -5,12 +5,12 @@ import type { Collection, Environment, Execution, Request, RequestLog } from "..
 
 const SCHEMAS_DIR = resolve(import.meta.dir, "../../schemas");
 
-const BASE_DIR = join(homedir(), ".mouserat");
-const COLLECTIONS_DIR = join(BASE_DIR, "collections");
-const ENVIRONMENTS_DIR = join(BASE_DIR, "environments");
-const LOGS_DIR = join(BASE_DIR, "logs");
-const LAST_EXECUTION_DIR = join(BASE_DIR, "last-execution");
-const PREFERENCES_FILE = join(BASE_DIR, "preferences.json");
+function getBaseDir() { return process.env.MOUSERAT_BASE_DIR ?? join(homedir(), ".mouserat"); }
+function getCollectionsDir() { return join(getBaseDir(), "collections"); }
+function getEnvironmentsDir() { return join(getBaseDir(), "environments"); }
+function getLogsDir() { return join(getBaseDir(), "logs"); }
+function getLastExecutionDir() { return join(getBaseDir(), "last-execution"); }
+function getPreferencesFile() { return join(getBaseDir(), "preferences.json"); }
 
 type Preferences = {
   activeEnvironmentId?: string | null;
@@ -22,15 +22,15 @@ async function ensureDir(path: string) {
 }
 
 export async function init() {
-  await ensureDir(COLLECTIONS_DIR);
-  await ensureDir(ENVIRONMENTS_DIR);
-  await ensureDir(LOGS_DIR);
-  await ensureDir(LAST_EXECUTION_DIR);
+  await ensureDir(getCollectionsDir());
+  await ensureDir(getEnvironmentsDir());
+  await ensureDir(getLogsDir());
+  await ensureDir(getLastExecutionDir());
 }
 
 export async function getPreferences(): Promise<Preferences> {
   try {
-    const raw = await Bun.file(PREFERENCES_FILE).text();
+    const raw = await Bun.file(getPreferencesFile()).text();
     return JSON.parse(raw) as Preferences;
   } catch {
     return {};
@@ -38,13 +38,13 @@ export async function getPreferences(): Promise<Preferences> {
 }
 
 export async function savePreferences(prefs: Preferences): Promise<void> {
-  await Bun.write(PREFERENCES_FILE, JSON.stringify(prefs, null, 2));
+  await Bun.write(getPreferencesFile(), JSON.stringify(prefs, null, 2));
 }
 
 export async function appendLog(log: RequestLog): Promise<void> {
-  await ensureDir(LOGS_DIR);
+  await ensureDir(getLogsDir());
   const safeTimestamp = log.timestamp.replace(/:/g, "-");
-  const filePath = join(LOGS_DIR, `${safeTimestamp}-${log.request.id}.json`);
+  const filePath = join(getLogsDir(), `${safeTimestamp}-${log.request.id}.json`);
   await Bun.write(filePath, JSON.stringify(log, null, 2));
 }
 
@@ -53,11 +53,11 @@ export async function appendLog(log: RequestLog): Promise<void> {
 export async function listCollections(): Promise<Collection[]> {
   const fs = await import("fs/promises");
   try {
-    const entries = await fs.readdir(COLLECTIONS_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(getCollectionsDir(), { withFileTypes: true });
     const collections: Collection[] = [];
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const filePath = join(COLLECTIONS_DIR, entry.name, "collection.json");
+      const filePath = join(getCollectionsDir(), entry.name, "collection.json");
       try {
         const raw = await Bun.file(filePath).text();
         collections.push(JSON.parse(raw) as Collection);
@@ -72,16 +72,16 @@ export async function listCollections(): Promise<Collection[]> {
 }
 
 export async function getCollectionDir(collectionId: string): Promise<string> {
-  return join(COLLECTIONS_DIR, collectionId);
+  return join(getCollectionsDir(), collectionId);
 }
 
 export async function getCollectionFilePath(collectionId: string): Promise<string> {
-  return join(COLLECTIONS_DIR, collectionId, "collection.json");
+  return join(getCollectionsDir(), collectionId, "collection.json");
 }
 
 export async function createCollection(): Promise<{ id: string; filePath: string }> {
   const id = uuidv4();
-  const dir = join(COLLECTIONS_DIR, id);
+  const dir = join(getCollectionsDir(), id);
   const requestsDir = join(dir, "requests");
   const fs = await import("fs/promises");
   await fs.mkdir(requestsDir, { recursive: true });
@@ -100,14 +100,14 @@ export async function createCollection(): Promise<{ id: string; filePath: string
 
 export async function deleteCollection(collectionId: string): Promise<void> {
   const fs = await import("fs/promises");
-  await fs.rm(join(COLLECTIONS_DIR, collectionId), { recursive: true, force: true });
+  await fs.rm(join(getCollectionsDir(), collectionId), { recursive: true, force: true });
 }
 
 // Requests
 
 export async function listRequests(collectionId: string): Promise<Request[]> {
   const fs = await import("fs/promises");
-  const requestsDir = join(COLLECTIONS_DIR, collectionId, "requests");
+  const requestsDir = join(getCollectionsDir(), collectionId, "requests");
   try {
     const entries = await fs.readdir(requestsDir, { withFileTypes: true });
     const requests: Request[] = [];
@@ -127,7 +127,7 @@ export async function listRequests(collectionId: string): Promise<Request[]> {
 }
 
 export async function getRequestFilePath(collectionId: string, requestId: string): Promise<string> {
-  return join(COLLECTIONS_DIR, collectionId, "requests", `${requestId}.json`);
+  return join(getCollectionsDir(), collectionId, "requests", `${requestId}.json`);
 }
 
 export async function createRequest(collectionId: string): Promise<{ id: string; filePath: string }> {
@@ -143,13 +143,13 @@ export async function createRequest(collectionId: string): Promise<{ id: string;
     jqFilter: "",
   };
 
-  const filePath = join(COLLECTIONS_DIR, collectionId, "requests", `${id}.json`);
+  const filePath = join(getCollectionsDir(), collectionId, "requests", `${id}.json`);
   await Bun.write(filePath, JSON.stringify(request, null, 2));
   return { id, filePath };
 }
 
 export async function saveRequestJqFilter(collectionId: string, requestId: string, jqFilter: string): Promise<void> {
-  const filePath = join(COLLECTIONS_DIR, collectionId, "requests", `${requestId}.json`);
+  const filePath = join(getCollectionsDir(), collectionId, "requests", `${requestId}.json`);
   const raw = await Bun.file(filePath).text();
   const request = JSON.parse(raw) as Record<string, unknown>;
   request.jqFilter = jqFilter;
@@ -158,7 +158,7 @@ export async function saveRequestJqFilter(collectionId: string, requestId: strin
 
 export async function deleteRequest(collectionId: string, requestId: string): Promise<void> {
   const fs = await import("fs/promises");
-  await fs.rm(join(COLLECTIONS_DIR, collectionId, "requests", `${requestId}.json`), { force: true });
+  await fs.rm(join(getCollectionsDir(), collectionId, "requests", `${requestId}.json`), { force: true });
 }
 
 // Environments
@@ -166,12 +166,12 @@ export async function deleteRequest(collectionId: string, requestId: string): Pr
 export async function listEnvironments(): Promise<Environment[]> {
   const fs = await import("fs/promises");
   try {
-    const entries = await fs.readdir(ENVIRONMENTS_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(getEnvironmentsDir(), { withFileTypes: true });
     const environments: Environment[] = [];
     for (const entry of entries) {
       if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
       try {
-        const raw = await Bun.file(join(ENVIRONMENTS_DIR, entry.name)).text();
+        const raw = await Bun.file(join(getEnvironmentsDir(), entry.name)).text();
         environments.push(JSON.parse(raw) as Environment);
       } catch {
         // skip malformed entries
@@ -184,23 +184,23 @@ export async function listEnvironments(): Promise<Environment[]> {
 }
 
 export async function getEnvironmentFilePath(environmentId: string): Promise<string> {
-  return join(ENVIRONMENTS_DIR, `${environmentId}.json`);
+  return join(getEnvironmentsDir(), `${environmentId}.json`);
 }
 
 export async function deleteEnvironment(environmentId: string): Promise<void> {
   const fs = await import("fs/promises");
-  await fs.rm(join(ENVIRONMENTS_DIR, `${environmentId}.json`), { force: true });
+  await fs.rm(join(getEnvironmentsDir(), `${environmentId}.json`), { force: true });
 }
 
 export async function listLogs(): Promise<RequestLog[]> {
   const fs = await import("fs/promises");
   try {
-    const entries = await fs.readdir(LOGS_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(getLogsDir(), { withFileTypes: true });
     const logs: RequestLog[] = [];
     for (const entry of entries) {
       if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
       try {
-        const raw = await Bun.file(join(LOGS_DIR, entry.name)).text();
+        const raw = await Bun.file(join(getLogsDir(), entry.name)).text();
         logs.push(JSON.parse(raw) as RequestLog);
       } catch {
         // skip malformed entries
@@ -216,7 +216,7 @@ export async function listLogs(): Promise<RequestLog[]> {
 
 export async function getLastExecution(requestId: string): Promise<Omit<Execution, "url"> | null> {
   try {
-    const raw = await Bun.file(join(LAST_EXECUTION_DIR, `${requestId}.json`)).text();
+    const raw = await Bun.file(join(getLastExecutionDir(), `${requestId}.json`)).text();
     return JSON.parse(raw) as Omit<Execution, "url">;
   } catch {
     return null;
@@ -224,8 +224,8 @@ export async function getLastExecution(requestId: string): Promise<Omit<Executio
 }
 
 export async function saveLastExecution(requestId: string, context: Omit<Execution, "url">): Promise<void> {
-  await ensureDir(LAST_EXECUTION_DIR);
-  await Bun.write(join(LAST_EXECUTION_DIR, `${requestId}.json`), JSON.stringify(context, null, 2));
+  await ensureDir(getLastExecutionDir());
+  await Bun.write(join(getLastExecutionDir(), `${requestId}.json`), JSON.stringify(context, null, 2));
 }
 
 export async function createEnvironment(): Promise<{ id: string; filePath: string }> {
@@ -243,7 +243,7 @@ export async function createEnvironment(): Promise<{ id: string; filePath: strin
     variables: {},
   };
 
-  const filePath = join(ENVIRONMENTS_DIR, `${id}.json`);
+  const filePath = join(getEnvironmentsDir(), `${id}.json`);
   await Bun.write(filePath, JSON.stringify(environment, null, 2));
   return { id, filePath };
 }

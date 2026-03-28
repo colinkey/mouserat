@@ -168,6 +168,39 @@ describe("parsePostmanUrl", () => {
   test("returns empty object for empty object url with no raw", () => {
     expect(parsePostmanUrl({})).toEqual({});
   });
+
+  test("host without protocol becomes bare rootUrl", () => {
+    const result = parsePostmanUrl({ host: "api.example.com", path: ["v1"] });
+    expect(result.rootUrl).toBe("api.example.com");
+    expect(result.relativeUrl).toBe("/v1");
+  });
+
+  test("path segments as objects use their value field", () => {
+    const result = parsePostmanUrl({
+      protocol: "https",
+      host: "api.example.com",
+      path: [{ type: "path", value: "users" }, { type: "path", value: ":id" }],
+    });
+    expect(result.relativeUrl).toBe("/users/:id");
+  });
+
+  test("path as a plain string is treated as relative path", () => {
+    const result = parsePostmanUrl({
+      protocol: "https",
+      host: "api.example.com",
+      path: "v1/users",
+    });
+    expect(result.relativeUrl).toBe("/v1/users");
+  });
+
+  test("path as a plain string already starting with slash is kept as-is", () => {
+    const result = parsePostmanUrl({
+      protocol: "https",
+      host: "api.example.com",
+      path: "/v1/users",
+    });
+    expect(result.relativeUrl).toBe("/v1/users");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -205,8 +238,8 @@ describe("parseHeaders", () => {
     );
     expect(result).toEqual({ "X-Api-Key": "{{apiKey}}" });
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].message).toContain("X-Api-Key");
-    expect(warnings[0].message).toContain("{{apiKey}}");
+    expect(warnings[0]!.message).toContain("X-Api-Key");
+    expect(warnings[0]!.message).toContain("{{apiKey}}");
   });
 
   test("returns undefined for string header", () => {
@@ -266,21 +299,21 @@ describe("parseBody", () => {
     const result = parseBody({ mode: "formdata" }, "My API", "Upload", warnings);
     expect(result).toBeUndefined();
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].message).toContain("formdata");
+    expect(warnings[0]!.message).toContain("formdata");
   });
 
   test("skips file body and adds warning", () => {
     const warnings: Warning[] = [];
     const result = parseBody({ mode: "file" }, "col", "req", warnings);
     expect(result).toBeUndefined();
-    expect(warnings[0].message).toContain("file");
+    expect(warnings[0]!.message).toContain("file");
   });
 
   test("skips graphql body and adds warning", () => {
     const warnings: Warning[] = [];
     const result = parseBody({ mode: "graphql" }, "col", "req", warnings);
     expect(result).toBeUndefined();
-    expect(warnings[0].message).toContain("graphql");
+    expect(warnings[0]!.message).toContain("graphql");
   });
 
   test("returns undefined for null body", () => {
@@ -291,6 +324,23 @@ describe("parseBody", () => {
   test("returns undefined for disabled body", () => {
     const warnings: Warning[] = [];
     expect(parseBody({ mode: "raw", raw: "hello", disabled: true }, "col", "req", warnings)).toBeUndefined();
+  });
+
+  test("returns undefined for unknown body mode", () => {
+    const warnings: Warning[] = [];
+    // @ts-expect-error intentional unknown mode
+    expect(parseBody({ mode: "unknown" }, "col", "req", warnings)).toBeUndefined();
+    expect(warnings).toHaveLength(0);
+  });
+
+  test("returns undefined for raw body with no raw field", () => {
+    const warnings: Warning[] = [];
+    expect(parseBody({ mode: "raw" }, "col", "req", warnings)).toBeUndefined();
+  });
+
+  test("returns undefined for urlencoded body with no entries", () => {
+    const warnings: Warning[] = [];
+    expect(parseBody({ mode: "urlencoded", urlencoded: [] }, "col", "req", warnings)).toBeUndefined();
   });
 });
 
@@ -363,8 +413,8 @@ describe("buildCollectionSpecs", () => {
     };
     const specs = buildCollectionSpecs(collection);
     expect(specs).toHaveLength(1);
-    expect(specs[0].name).toBe("My API");
-    expect(specs[0].items).toHaveLength(2);
+    expect(specs[0]!.name).toBe("My API");
+    expect(specs[0]!.items).toHaveLength(2);
   });
 
   test("top-level folders each become a collection", () => {
@@ -377,8 +427,8 @@ describe("buildCollectionSpecs", () => {
     };
     const specs = buildCollectionSpecs(collection);
     expect(specs).toHaveLength(2);
-    expect(specs[0].name).toBe("Users");
-    expect(specs[1].name).toBe("Orders");
+    expect(specs[0]!.name).toBe("Users");
+    expect(specs[1]!.name).toBe("Orders");
   });
 
   test("sub-folders are flattened into their parent collection", () => {
@@ -399,9 +449,9 @@ describe("buildCollectionSpecs", () => {
     };
     const specs = buildCollectionSpecs(collection);
     expect(specs).toHaveLength(1);
-    expect(specs[0].name).toBe("Users");
-    expect(specs[0].items).toHaveLength(2);
-    expect(specs[0].items.map((i) => i.name)).toEqual(["List", "Delete"]);
+    expect(specs[0]!.name).toBe("Users");
+    expect(specs[0]!.items).toHaveLength(2);
+    expect(specs[0]!.items.map((i) => i.name)).toEqual(["List", "Delete"]);
   });
 
   test("mix of root requests and folders produces correct specs", () => {
@@ -414,8 +464,8 @@ describe("buildCollectionSpecs", () => {
     };
     const specs = buildCollectionSpecs(collection);
     expect(specs).toHaveLength(2);
-    expect(specs[0].name).toBe("My API");   // root requests
-    expect(specs[1].name).toBe("Users");    // folder
+    expect(specs[0]!.name).toBe("My API");   // root requests
+    expect(specs[1]!.name).toBe("Users");    // folder
   });
 
   test("returns empty array for empty collection", () => {
