@@ -30,6 +30,7 @@ import {
   getLastExecution,
   saveLastExecution,
 } from "./index";
+import { HttpMethods } from "../types";
 
 afterAll(async () => {
   delete process.env.MOUSERAT_BASE_DIR;
@@ -257,7 +258,7 @@ describe("logs", () => {
       collection: { id: "col-1", name: "My API" },
       environment: undefined,
       execution: {
-        method: "GET",
+        method: HttpMethods.GET,
         url: "https://api.example.com/users",
         headers: {},
         variables: undefined,
@@ -281,7 +282,7 @@ describe("logs", () => {
       request: { id: `req-sort-${ts}`, name: "Sort Test" },
       collection: { id: "col-1", name: "My API" },
       environment: undefined,
-      execution: { method: "GET", url: "/", headers: {}, variables: undefined, body: undefined, jqFilter: undefined },
+      execution: { method: HttpMethods.GET, url: "/", headers: {}, variables: undefined, body: undefined, jqFilter: undefined },
       response: { stdout: "", stderr: "", exitCode: 0, rawStdout: "" },
     });
 
@@ -305,7 +306,7 @@ describe("getLastExecution / saveLastExecution", () => {
 
   test("round-trips last execution context", async () => {
     const ctx = {
-      method: "POST",
+      method: HttpMethods.POST,
       headers: { "Content-Type": "application/json" },
       body: { name: "Alice" },
       jqFilter: ".id",
@@ -318,8 +319,8 @@ describe("getLastExecution / saveLastExecution", () => {
   });
 
   test("overwrites previous last execution", async () => {
-    await saveLastExecution("req-last-2", { method: "GET", headers: {}, body: undefined, jqFilter: undefined, variables: undefined });
-    await saveLastExecution("req-last-2", { method: "DELETE", headers: {}, body: undefined, jqFilter: undefined, variables: undefined });
+    await saveLastExecution("req-last-2", { method: HttpMethods.GET, headers: {}, body: undefined, jqFilter: undefined, variables: undefined });
+    await saveLastExecution("req-last-2", { method: HttpMethods.DELETE, headers: {}, body: undefined, jqFilter: undefined, variables: undefined });
     const result = await getLastExecution("req-last-2");
     expect(result?.method).toBe("DELETE");
   });

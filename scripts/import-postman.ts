@@ -67,7 +67,7 @@ export interface PostmanItem {
 export type PostmanItems = PostmanItem[];
 
 export interface PostmanCollection {
-  info: { name: string; _postman_id?: string };
+  info: { name: string; _postman_id?: string; schema?: string };
   item: PostmanItems;
 }
 
