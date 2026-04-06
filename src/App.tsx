@@ -11,7 +11,7 @@ import { LogScreen } from "./screens/LogScreen.tsx";
 import type { Collection, Environment, Execution, Request, RequestLog, Screen } from "./types/index.ts";
 import * as storage from "./storage/index.ts";
 import { openInEditor, openExecutionInEditor, openJqFilterInEditor } from "./utils/editor.ts";
-import { executeRequest, applyJqFilter } from "./utils/curl.ts";
+import { executeRequest, applyJqFilter, isJsonContentType } from "./utils/curl.ts";
 
 export function App() {
   const { exit } = useApp();
@@ -32,6 +32,7 @@ export function App() {
 
   const [response, setResponse] = useState<string | null>(null);
   const [rawResponse, setRawResponse] = useState<string | null>(null);
+  const [responseIsJson, setResponseIsJson] = useState(false);
   const [responseJqFilter, setResponseJqFilter] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [executionContext, setExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
@@ -137,6 +138,7 @@ export function App() {
         setScreen("collection");
         setResponse(null);
         setRawResponse(null);
+        setResponseIsJson(false);
         setResponseJqFilter(null);
         setExecutionContext(null);
         setLastExecutionContext(null);
@@ -167,6 +169,7 @@ export function App() {
         setScreen("request");
         setResponse(null);
         setRawResponse(null);
+        setResponseIsJson(false);
         setResponseJqFilter(null);
         setExecutionContext(null);
         storage.getLastExecution(req.id).then(setLastExecutionContext);
@@ -182,6 +185,7 @@ export function App() {
             const output = result.stdout || result.stderr;
             setRawResponse(result.rawStdout);
             setResponse(output);
+            setResponseIsJson(isJsonContentType(result.contentType));
             setResponseScrollOffset(0);
             if (executionContext) {
               storage.saveLastExecution(activeRequest.id, executionContext);
@@ -244,7 +248,7 @@ export function App() {
     }
 
     // Apply jq filter to response
-    if (input === "f" && screen === "request" && rawResponse != null) {
+    if (input === "f" && screen === "request" && rawResponse != null && responseIsJson) {
       openJqFilterInEditor(responseJqFilter ?? ".").then(async (filter) => {
         if (filter == null) return;
         const result = await applyJqFilter(rawResponse, filter);
@@ -369,7 +373,10 @@ export function App() {
     if (screen === "collections") return [...base, "↑↓/jk navigate", "enter open", "n new", "e edit", "d delete"];
     if (screen === "environments") return [...base, "↑↓/jk navigate", "enter activate", "n new", "e edit", "d delete"];
     if (screen === "collection") return [...base, "↑↓/jk navigate", "enter open", "esc back", "n new", "e edit", "d delete"];
-    if (screen === "request") return ["q quit", "enter execute", "↑↓/jk scroll", "v execution context", "l load last", "f jq filter", "x clear", "c copy filter", "e edit request", "d delete", "esc back"];
+    if (screen === "request") {
+      const jqHints = responseIsJson ? ["f jq filter", "x clear", "c copy filter"] : [];
+      return ["q quit", "enter execute", "↑↓/jk scroll", "v execution context", "l load last", ...jqHints, "e edit request", "d delete", "esc back"];
+    }
     if (screen === "logs") return [...base, "↑↓/jk navigate", "enter view", "r reload"];
     if (screen === "log") return ["esc back"];
     return base;
@@ -402,6 +409,7 @@ export function App() {
             environment={activeEnvironment}
             response={response}
             isLoading={isLoading}
+            isJson={responseIsJson}
             executionContext={executionContext}
             lastExecutionContext={lastExecutionContext}
             responseJqFilter={responseJqFilter}
