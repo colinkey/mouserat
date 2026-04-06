@@ -9,13 +9,14 @@ interface Props {
   environment: Environment | null;
   response: string | null;
   isLoading: boolean;
+  isJson: boolean;
   executionContext: Omit<Execution, "url"> | null;
   lastExecutionContext: Omit<Execution, "url"> | null;
   responseJqFilter: string | null;
   scrollOffset: number;
 }
 
-export function RequestScreen({ request, collection, environment, response, isLoading, executionContext, lastExecutionContext, responseJqFilter, scrollOffset }: Props) {
+export function RequestScreen({ request, collection, environment, response, isLoading, isJson, executionContext, lastExecutionContext, responseJqFilter, scrollOffset }: Props) {
   const method = executionContext?.method ?? request.method;
   const body = executionContext?.body !== undefined ? executionContext.body : request.body;
   const jqFilter = executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter;
@@ -109,7 +110,7 @@ export function RequestScreen({ request, collection, environment, response, isLo
           <Text color="yellow">Running...</Text>
         ) : response != null ? (
           <>
-            {responseJqFilter ? (
+            {isJson && responseJqFilter ? (
               <Box marginBottom={1}>
                 <Text dimColor>jq filter: </Text>
                 <Text color="cyan">{responseJqFilter}</Text>

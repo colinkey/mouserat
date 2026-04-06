@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { extractUrlVariables, interpolateUrl, buildUrl, applyJqFilter } from "./curl";
+import { extractUrlVariables, interpolateUrl, buildUrl, applyJqFilter, isJsonContentType } from "./curl";
 import type { Collection, Environment, Request } from "../types/index";
 
 // ---------------------------------------------------------------------------
@@ -140,6 +140,36 @@ describe("buildUrl", () => {
   test("omitted relativeUrls produce no trailing segments", () => {
     const url = buildUrl(req(), col(), env({ rootUrl: "https://api.example.com" }));
     expect(url).toBe("https://api.example.com");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyJqFilter
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// isJsonContentType
+// ---------------------------------------------------------------------------
+
+describe("isJsonContentType", () => {
+  test("returns true for application/json", () => {
+    expect(isJsonContentType("application/json")).toBe(true);
+  });
+
+  test("returns true for application/json with charset", () => {
+    expect(isJsonContentType("application/json; charset=utf-8")).toBe(true);
+  });
+
+  test("returns false for text/plain", () => {
+    expect(isJsonContentType("text/plain")).toBe(false);
+  });
+
+  test("returns false for text/html", () => {
+    expect(isJsonContentType("text/html; charset=utf-8")).toBe(false);
+  });
+
+  test("returns false for empty string", () => {
+    expect(isJsonContentType("")).toBe(false);
   });
 });
 

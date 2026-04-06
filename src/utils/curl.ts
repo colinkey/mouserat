@@ -6,6 +6,14 @@ export interface ExecuteResult {
   stderr: string;
   exitCode: number;
   rawStdout: string;
+  contentType: string;
+}
+
+const CT_MARKER = "\n###MOUSERAT_CT###";
+
+/** Returns true if the content-type header indicates a JSON response. */
+export function isJsonContentType(contentType: string): boolean {
+  return contentType.includes("application/json");
 }
 
 /** Returns the variable names referenced in a URL pattern using :varName syntax. */
@@ -52,6 +60,7 @@ export async function executeRequest(
       stderr: `Missing URL variables: ${missing.join(", ")}`,
       exitCode: 1,
       rawStdout: "",
+      contentType: "",
     };
   }
 
@@ -68,7 +77,7 @@ export async function executeRequest(
     variables: Object.keys(allVariables).length > 0 ? allVariables : undefined,
   };
 
-  const args: string[] = ["-s", "-w", "\n", "-X", execution.method, execution.url];
+  const args: string[] = ["-s", "-w", `\n${CT_MARKER}%{content_type}`, "-X", execution.method, execution.url];
 
   for (const [key, value] of Object.entries(execution.headers)) {
     args.push("-H", `${key}: ${value}`);
@@ -103,14 +112,24 @@ export async function executeRequest(
     environment: environment ? { id: environment.id, name: environment.name } : undefined,
   };
 
+  const markerIdx = curlStdout.lastIndexOf(CT_MARKER);
+  const body = markerIdx !== -1 ? curlStdout.slice(0, markerIdx) : curlStdout;
+  const contentType = markerIdx !== -1 ? curlStdout.slice(markerIdx + CT_MARKER.length).trim() : "";
+
   if (curlExit !== 0) {
-    const result = { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit, rawStdout: curlStdout };
+    const result = { stdout: body, stderr: curlStderr, exitCode: curlExit, rawStdout: body, contentType };
+    appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
+    return result;
+  }
+
+  if (!isJsonContentType(contentType)) {
+    const result = { stdout: body, stderr: curlStderr, exitCode: 0, rawStdout: body, contentType };
     appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
     return result;
   }
 
   const jqProc = Bun.spawn(["jq", execution.jqFilter || "."], {
-    stdin: new TextEncoder().encode(curlStdout),
+    stdin: new TextEncoder().encode(body),
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -118,7 +137,7 @@ export async function executeRequest(
   const jqStderr = await new Response(jqProc.stderr).text();
   const jqExit = await jqProc.exited;
 
-  const result = { stdout: jqStdout, stderr: jqStderr || curlStderr, exitCode: jqExit, rawStdout: curlStdout };
+  const result = { stdout: jqStdout, stderr: jqStderr || curlStderr, exitCode: jqExit, rawStdout: body, contentType };
   appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
   return result;
 }
