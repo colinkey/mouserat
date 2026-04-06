@@ -43,7 +43,7 @@ bun start
 | `1` | Collections list |
 | `2` | Environments list |
 | `3` | Request logs |
-| `↑↓` / `jk` | Navigate |
+| `↑↓` / `jk` | Navigate lists; scroll response body (request screen) |
 | `enter` | Open collection / execute request / activate environment |
 | `esc` / `h` | Back |
 | `n` | New item |

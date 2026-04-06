@@ -37,6 +37,7 @@ export function App() {
   const [executionContext, setExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
   const [lastExecutionContext, setLastExecutionContext] = useState<Omit<Execution, "url"> | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [responseScrollOffset, setResponseScrollOffset] = useState(0);
   const initializedRef = useRef(false);
 
   const activeEnvironment = environments.find((e) => e.id === activeEnvironmentId) ?? null;
@@ -114,12 +115,17 @@ export function App() {
     }
 
     // Vim + arrow navigation
-    if (key.upArrow || input === "k") moveUp();
-    if (key.downArrow || input === "j") {
-      if (screen === "collections") moveDown(collections.length);
-      if (screen === "environments") moveDown(environments.length);
-      if (screen === "collection") moveDown(requests.length);
-      if (screen === "logs") moveDown(logs.length);
+    if (screen === "request") {
+      if (key.upArrow || input === "k") setResponseScrollOffset((o) => Math.max(0, o - 1));
+      if (key.downArrow || input === "j") setResponseScrollOffset((o) => o + 1);
+    } else {
+      if (key.upArrow || input === "k") moveUp();
+      if (key.downArrow || input === "j") {
+        if (screen === "collections") moveDown(collections.length);
+        if (screen === "environments") moveDown(environments.length);
+        if (screen === "collection") moveDown(requests.length);
+        if (screen === "logs") moveDown(logs.length);
+      }
     }
 
     // Back
@@ -176,6 +182,7 @@ export function App() {
             const output = result.stdout || result.stderr;
             setRawResponse(result.rawStdout);
             setResponse(output);
+            setResponseScrollOffset(0);
             if (executionContext) {
               storage.saveLastExecution(activeRequest.id, executionContext);
               setLastExecutionContext(executionContext);
@@ -243,6 +250,7 @@ export function App() {
         const result = await applyJqFilter(rawResponse, filter);
         setResponseJqFilter(filter);
         setResponse(result.stdout || result.stderr);
+        setResponseScrollOffset(0);
       });
       return;
     }
@@ -260,6 +268,7 @@ export function App() {
       if (responseJqFilter != null) {
         setResponseJqFilter(null);
         setResponse(rawResponse);
+        setResponseScrollOffset(0);
       } else {
         setExecutionContext(null);
       }
@@ -360,7 +369,7 @@ export function App() {
     if (screen === "collections") return [...base, "↑↓/jk navigate", "enter open", "n new", "e edit", "d delete"];
     if (screen === "environments") return [...base, "↑↓/jk navigate", "enter activate", "n new", "e edit", "d delete"];
     if (screen === "collection") return [...base, "↑↓/jk navigate", "enter open", "esc back", "n new", "e edit", "d delete"];
-    if (screen === "request") return ["q quit", "enter execute", "v execution context", "l load last", "f jq filter", "x clear", "c copy filter", "e edit request", "d delete", "esc back"];
+    if (screen === "request") return ["q quit", "enter execute", "↑↓/jk scroll", "v execution context", "l load last", "f jq filter", "x clear", "c copy filter", "e edit request", "d delete", "esc back"];
     if (screen === "logs") return [...base, "↑↓/jk navigate", "enter view", "r reload"];
     if (screen === "log") return ["esc back"];
     return base;
@@ -396,6 +405,7 @@ export function App() {
             executionContext={executionContext}
             lastExecutionContext={lastExecutionContext}
             responseJqFilter={responseJqFilter}
+            scrollOffset={responseScrollOffset}
           />
         )}
         {screen === "logs" && (

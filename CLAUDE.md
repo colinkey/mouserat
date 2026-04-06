@@ -75,7 +75,7 @@ If a referenced variable is missing when executing, an error is shown in the res
 | `1` | Go to collections list |
 | `2` | Go to environments list |
 | `3` | Go to request logs |
-| `↑↓` / `jk` | Navigate lists |
+| `↑↓` / `jk` | Navigate lists; scroll response body (request screen) |
 | `enter` | Open collection / execute request / activate environment |
 | `esc` / `h` | Go back |
 | `n` | New item (creates file with defaults, opens in `$EDITOR`) |
