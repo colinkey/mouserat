@@ -103,13 +103,13 @@ export async function executeRequest(
     environment: environment ? { id: environment.id, name: environment.name } : undefined,
   };
 
-  if (curlExit !== 0 || !execution.jqFilter) {
+  if (curlExit !== 0) {
     const result = { stdout: curlStdout, stderr: curlStderr, exitCode: curlExit, rawStdout: curlStdout };
     appendLog({ ...logBase, durationMs: Date.now() - startMs, response: result });
     return result;
   }
 
-  const jqProc = Bun.spawn(["jq", execution.jqFilter], {
+  const jqProc = Bun.spawn(["jq", execution.jqFilter || "."], {
     stdin: new TextEncoder().encode(curlStdout),
     stdout: "pipe",
     stderr: "pipe",
