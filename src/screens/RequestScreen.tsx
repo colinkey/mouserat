@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { Collection, Environment, Execution, Request } from "../types/index.ts";
+import { ScrollableText } from "../components/ScrollableText.tsx";
 
 interface Props {
   request: Request;
@@ -11,9 +12,10 @@ interface Props {
   executionContext: Omit<Execution, "url"> | null;
   lastExecutionContext: Omit<Execution, "url"> | null;
   responseJqFilter: string | null;
+  scrollOffset: number;
 }
 
-export function RequestScreen({ request, collection, environment, response, isLoading, executionContext, lastExecutionContext, responseJqFilter }: Props) {
+export function RequestScreen({ request, collection, environment, response, isLoading, executionContext, lastExecutionContext, responseJqFilter, scrollOffset }: Props) {
   const method = executionContext?.method ?? request.method;
   const body = executionContext?.body !== undefined ? executionContext.body : request.body;
   const jqFilter = executionContext?.jqFilter !== undefined ? executionContext.jqFilter : request.jqFilter;
@@ -114,7 +116,7 @@ export function RequestScreen({ request, collection, environment, response, isLo
                 <Text dimColor>  x clear  c copy to request</Text>
               </Box>
             ) : null}
-            <Text>{response}</Text>
+            <ScrollableText text={response} scrollOffset={scrollOffset} />
           </>
         ) : (
           <Text dimColor>Press enter to execute request.</Text>
